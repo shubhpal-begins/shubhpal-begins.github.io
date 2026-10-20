@@ -8,10 +8,14 @@
  * Re-deploy (Manage deployments → edit → new version) after changing this script.
  */
 var HEADERS = ['Submitted at', 'Name', 'Phone', 'Attending', 'Guests'];
+// Apps Script can't read the real Origin header, so the page sends location.origin as a field.
+// This blocks other copies of the site; a hand-crafted request can still fake it.
+var ALLOWED_ORIGIN = 'https://shubhpal-begins.github.io';
 
 function doPost(e) {
   var p = (e && e.parameter) || {};
   if (p.website) return json_({ ok: true }); // honeypot filled → bot; pretend success
+  if (p.origin !== ALLOWED_ORIGIN) return json_({ ok: false, error: 'origin_not_allowed' });
 
   var name = clean_(p.name, 80);
   if (!name) return json_({ ok: false, error: 'name_required' });

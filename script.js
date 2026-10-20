@@ -2410,6 +2410,7 @@ function initRSVPForm(endpoint) {
 
     var data = new URLSearchParams(new FormData(form));
     if (data.get('attending') !== 'Yes') data.set('guests', '0');
+    data.set('origin', location.origin); // the sheet script only accepts the live site's origin
     btn.disabled = true;
     label.textContent = 'SENDING…';
     setStatus('Sending your RSVP…');
