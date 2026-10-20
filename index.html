@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<script type="application/json" id="wedding-config">{"couple":{"bride":"Pallavi","groom":"Shubham","date":"2026-12-02","venue":"Blessings Banquets & Resort, Ranchi","whatsapp":"7004585703","hashtag":"#ShubhPalBegins"},"invite":{"blessing":"","brideFather":"Alok Kumar Thakur","brideMother":"Pushpa Kumari","groomFather":"Priyaranjan Kumar","groomMother":"Sudha Devi","showGrandparents":false,"brideGF":"","brideGM":"","groomGF":"","groomGM":""},"events":[],"story":{"show":true,"customHashtag":"","tags":[]},"gallery":{"show":true,"layout":"4","photos":["assets/Demo/Arch_Demo2.png","assets/Demo/Arch_demo.png","assets/Demo/landscape_demo.png","assets/Demo/hero-arch_demo.png"]},"thingsToKnow":[],"rsvp":{"mode":"whatsapp","heading":"","subtext":"We've saved a seat for you — at our table, in our hearts, and under the royal sky. Come celebrate with us as we begin this new chapter together.","btnText":"Yes, I'll be there","whatsapp":""},"music":{"enabled":false,"src":"","name":""},"calendarUrls":{"google":"https://calendar.google.com/calendar/render?action=TEMPLATE\u0026text=Pallavi%20weds%20Shubham\u0026dates=20261202/20261203\u0026location=https://maps.app.goo.gl/kssXPyTuTPUazfYu7","apple":"data:text/calendar;charset=utf8,BEGIN:VCALENDAR%0AVERSION:2.0%0ABEGIN:VEVENT%0ADTSTART:20261202%0ADTEND:20261203%0ASUMMARY:Pallavi%20weds%20Shubham%0ALOCATION:%0AEND:VEVENT%0AEND:VCALENDAR"}}</script>
+<script type="application/json" id="wedding-config">{"couple":{"bride":"Pallavi","groom":"Shubham","date":"2026-12-02","venue":"Blessings Banquets & Resort, Ranchi","hashtag":"#ShubhPalBegins"},"invite":{"blessing":"","brideFather":"Alok Kumar Thakur","brideMother":"Pushpa Kumari","groomFather":"Priyaranjan Kumar","groomMother":"Sudha Devi","showGrandparents":false,"brideGF":"","brideGM":"","groomGF":"","groomGM":""},"events":[],"story":{"show":true,"customHashtag":"","tags":[]},"gallery":{"show":true,"layout":"4","photos":["assets/Demo/Arch_Demo2.png","assets/Demo/Arch_demo.png","assets/Demo/landscape_demo.png","assets/Demo/hero-arch_demo.png"]},"thingsToKnow":[],"rsvp":{"endpoint":"https://script.google.com/macros/s/AKfycbze7EIF_ZAaLSRvVlUWXggeq3rBNfzD0g1jG0Cqa-vJLB2LiujKen7YLxCd_86IC9Le/exec","heading":"","subtext":"We've saved a seat for you, at our table, in our hearts, and under the royal sky. Come celebrate with us as we begin this new chapter together."},"music":{"enabled":false,"src":"","name":""},"calendarUrls":{"google":"https://calendar.google.com/calendar/render?action=TEMPLATE\u0026text=Pallavi%20weds%20Shubham\u0026dates=20261202/20261203\u0026location=https://maps.app.goo.gl/kssXPyTuTPUazfYu7","apple":"data:text/calendar;charset=utf8,BEGIN:VCALENDAR%0AVERSION:2.0%0ABEGIN:VEVENT%0ADTSTART:20261202%0ADTEND:20261203%0ASUMMARY:Pallavi%20weds%20Shubham%0ALOCATION:%0AEND:VEVENT%0AEND:VCALENDAR"}}</script>
 <script>window.__WEDDING_CONFIG__ = JSON.parse(document.getElementById('wedding-config').textContent);</script>
 <script>
 </script>
@@ -239,6 +239,7 @@
     <!-- CTA outside the arch — floats on the Pichwai background -->
     <div class="inv-cta">
       <a class="inv-btn" href="#events">View Events</a>
+      <a class="inv-btn inv-btn--rsvp" href="#rsvp">RSVP</a>
     </div>
 
   </section>
@@ -494,7 +495,7 @@
     <!-- ── Content block ── -->
     <div class="rsvp-content">
 
-      <p  class="rsvp-eyebrow  rsvp-reveal" aria-hidden="true">JOIN THE CELEBRATION</p>
+      <p  class="rsvp-eyebrow  rsvp-reveal" aria-hidden="true">KINDLY RSVP</p>
 
       <!-- <h2 class="rsvp-headline rsvp-reveal" id="rsvpHeadline">
         <span class="rsvp-hl-will">Will you</span>
@@ -502,21 +503,37 @@
       </h2> -->
 
       <p class="rsvp-body rsvp-reveal">
-        We've saved a seat for you — at our table, in our hearts,
+        We've saved a seat for you, at our table, in our hearts,
         and under the royal sky. Come celebrate with us as we begin
         this new chapter together.
       </p>
 
-      <!-- Primary CTA -->
-      <div class="rsvp-cta-wrap rsvp-reveal">
-        <a class="rsvp-btn-primary"
-           href="https://wa.me/910000000000?text=Yes%2C%20I%27ll%20be%20there%20%E2%80%94%20Aarav%20%26%20Meera%27s%20celebration!"
-           target="_blank" rel="noreferrer"
-           aria-label="RSVP — Yes, I'll be there. Opens WhatsApp.">
-          <span class="rsvp-btn-inner">YES, I'LL BE THERE</span>
-        </a>
-        <p class="rsvp-helper">You'll be redirected to WhatsApp to confirm your attendance.</p>
-      </div>
+      <!-- RSVP form — replies are appended to a Google Sheet (see tools/rsvp-sheet.gs) -->
+      <form class="rsvp-cta-wrap rsvp-form rsvp-reveal" id="rsvpForm" novalidate>
+        <label class="rsvp-field">
+          <span class="rsvp-label">Your name</span>
+          <input class="rsvp-input" name="name" type="text" autocomplete="name" required maxlength="80">
+        </label>
+        <label class="rsvp-field">
+          <span class="rsvp-label">Phone <em>(so we can reach you)</em></span>
+          <input class="rsvp-input" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20">
+        </label>
+        <fieldset class="rsvp-field rsvp-choice">
+          <legend class="rsvp-label">Will you join us?</legend>
+          <label class="rsvp-pill"><input type="radio" name="attending" value="Yes" required checked><span>Joyfully, yes</span></label>
+          <label class="rsvp-pill"><input type="radio" name="attending" value="No"><span>Sadly, no</span></label>
+        </fieldset>
+        <label class="rsvp-field" id="rsvpGuestsField">
+          <span class="rsvp-label">Number of guests (including you)</span>
+          <input class="rsvp-input" name="guests" type="number" min="1" max="10" value="1" inputmode="numeric">
+        </label>
+        <!-- Honeypot: hidden from people, bots fill it in -->
+        <input class="rsvp-hp" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="rsvp-btn-primary" type="submit">
+          <span class="rsvp-btn-inner">SEND MY RSVP</span>
+        </button>
+        <p class="rsvp-helper" id="rsvpStatus" role="status" aria-live="polite">Thank you for taking a moment to RSVP. See you there!</p>
+      </form>
 
       <!-- Save the Date -->
       <div class="rsvp-std rsvp-reveal">
@@ -615,8 +632,6 @@
       <div class="menu-divider" aria-hidden="true"></div>
       <a class="menu-link" href="#couple">Meet the Couple</a>
       <div class="menu-divider" aria-hidden="true"></div>
-      <a class="menu-link" href="#gallery">Gallery</a>
-      <div class="menu-divider" aria-hidden="true"></div>
       <a class="menu-link" href="#things">Things to Know</a>
       <div class="menu-divider" aria-hidden="true"></div>
       <a class="menu-link" href="#rsvp">RSVP</a>
@@ -628,6 +643,7 @@
           aria-label="Play music" aria-pressed="false">
     <img class="music-icon-img" src="assets/shared/music_icon.webp"
          alt="" aria-hidden="true" draggable="false">
+    <span class="music-hint" aria-hidden="true">Tap here to mute</span>
   </button>
 
   <!-- Compass toggle button -->

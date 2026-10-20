@@ -215,7 +215,18 @@ const musicToggle  = document.getElementById("musicToggle");
 const rmq = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ── Background music helpers ── */
+/* One-time "Tap here to mute" bubble the first time music starts */
+let _musicHintShown = false;
+function showMusicHint() {
+  _musicHintShown = true;
+  setTimeout(() => {
+    musicToggle.classList.add("show-hint");
+    setTimeout(() => musicToggle.classList.remove("show-hint"), 6000);
+  }, 1200);
+}
+
 function setBgMusicState(playing) {
+  if (playing && !_musicHintShown) showMusicHint();
   musicToggle.classList.toggle("is-playing", playing);
   musicToggle.setAttribute("aria-pressed", playing ? "true" : "false");
   musicToggle.setAttribute("aria-label",   playing ? "Pause music" : "Play music");
@@ -236,31 +247,9 @@ function pauseBgMusic() {
   syncBgMusicState();
 }
 
-/* Pre-unlock audio on the very first touch anywhere on the rope button.
-   iOS/Safari requires play() to be called from a synchronous user-gesture
-   handler. Touching the rope triggers pointerdown → pre-unlock, so when
-   triggerIntro fires on pointermove / pointerup the audio context is warm. */
-let _musicUnlocked = false;
-function _unlockMusic() {
-  if (_musicUnlocked) return;
-  bgMusic.volume = 0;
-  bgMusic.play().then(() => {
-    _musicUnlocked = true;
-    if (triggered) {
-      /* triggerIntro already fired while unlock was in-flight — unmute and keep playing */
-      bgMusic.volume = 1;
-      syncBgMusicState();
-    } else {
-      bgMusic.pause();
-      bgMusic.currentTime = 0;
-      bgMusic.volume = 1;
-      syncBgMusicState();
-    }
-  }).catch(() => { bgMusic.volume = 1; });
-}
-
 musicToggle.addEventListener("click", e => {
   e.stopPropagation();
+  musicToggle.classList.remove("show-hint");
   if (bgMusic.paused) {
     playBgMusic().catch(syncBgMusicState);
   } else {
@@ -1297,24 +1286,11 @@ function revealSite() {
 
 
 let triggered = false;
+let _musicStarted = false;
 function triggerIntro() {
   if (triggered) return;
   triggered = true;
   Sound.bell(); /* soft bell chime — the pull lands */
-  /* Start background music. pointermove isn't a trusted activation in all browsers,
-     so if play() is blocked, retry on the very next user gesture (lotus tap, scroll, etc.) */
-  playBgMusic().catch(() => {
-    syncBgMusicState();
-    function retryMusic() {
-      playBgMusic().catch(syncBgMusicState);
-      document.removeEventListener('click',      retryMusic, true);
-      document.removeEventListener('touchstart', retryMusic, true);
-      document.removeEventListener('keydown',    retryMusic, true);
-    }
-    document.addEventListener('click',      retryMusic, { once: true, capture: true });
-    document.addEventListener('touchstart', retryMusic, { once: true, capture: true, passive: true });
-    document.addEventListener('keydown',    retryMusic, { once: true, capture: true });
-  });
   if (ropeFrame) {
     cancelAnimationFrame(ropeFrame);
     ropeFrame = 0;
@@ -1464,7 +1440,6 @@ function snapBack() {
 
 ropeButton.addEventListener("pointerdown", e => {
   if (triggered) return;
-  _unlockMusic(); /* pre-warm <audio> element while still in gesture handler */
   /* iOS/Safari: WebAudio AudioContext must also be resumed inside a gesture stack */
   try { const sc = Sound.ctx; if (sc && sc.state === "suspended") sc.resume(); } catch (_) {}
   e.preventDefault();
@@ -1537,6 +1512,11 @@ ropeButton.addEventListener("click", () => { if (!triggered && rmq) triggerIntro
 lotusButton.addEventListener("click", () => {
   if (lotusButton.classList.contains("is-animating")) return;
   lotusButton.classList.add("is-animating");
+
+  /* Music starts on the lotus tap, once per visit; a later Home → lotus keeps the guest's mute choice */
+  if (!_musicStarted) {
+    playBgMusic().then(() => { _musicStarted = true; }).catch(syncBgMusicState);
+  }
 
   if (rmq) { revealSite(); return; }
 
@@ -1696,7 +1676,7 @@ const TTK_ITEMS = [
   },
   {
     type: "weather", enabled: false, title: "Weather",
-    description: "December in Udaipur is pleasant — expect clear skies and cool evenings.",
+    description: "December in Udaipur is pleasant, so expect clear skies and cool evenings.",
     icon: TTK_BASE + "pn-ttk-ico-weather-x-v01.webp", linkLabel: null, linkUrl: null, custom: false,
   },
   {
@@ -2354,32 +2334,8 @@ if (document.readyState !== "loading") initRSVP();
   var rsvpBody = document.querySelector('.rsvp-body');
   if (rsvpBody && rsvp.subtext) rsvpBody.textContent = rsvp.subtext;
 
-  /* ── RSVP — primary CTA button ── */
-  var rsvpBtn = document.querySelector('.rsvp-btn-primary');
-  if (rsvpBtn && couple.bride) {
-    if (rsvp.mode === 'form' && rsvp.form_url) {
-      rsvpBtn.href = rsvp.form_url;
-      rsvpBtn.setAttribute('target', '_blank');
-    } else {
-      var ph = (couple.whatsapp || '').replace(/\D/g, '');
-      if (ph) {
-        var full = ph.startsWith('91') ? ph : '91' + ph;
-        var msg = encodeURIComponent(
-          'Hi ' + couple.bride + ' & ' + couple.groom + "! I'll be there to celebrate with you!"
-        );
-        rsvpBtn.href = 'https://wa.me/' + full + '?text=' + msg;
-      }
-    }
-    var btnInner = rsvpBtn.querySelector('.rsvp-btn-inner');
-    var btnLabel = rsvp.mode === 'form' ? (rsvp.button_text || rsvp.btnText) : rsvp.btnText;
-    if (btnInner && btnLabel) btnInner.textContent = btnLabel;
-    var rsvpHelper = rsvpBtn.parentElement && rsvpBtn.parentElement.querySelector('.rsvp-helper');
-    if (rsvpHelper) {
-      rsvpHelper.textContent = rsvp.mode === 'form'
-        ? "You'll be redirected to our RSVP form."
-        : "You'll be redirected to WhatsApp to confirm your attendance.";
-    }
-  }
+  /* ── RSVP — form → Google Sheet (Apps Script web app, see tools/rsvp-sheet.gs) ── */
+  initRSVPForm(rsvp.endpoint);
 
   /* ── Calendar links — use ShaadiPath pipeline URLs ── */
   if (C.calendarUrls) {
@@ -2409,3 +2365,72 @@ if (document.readyState !== "loading") initRSVP();
     // Music toggle always visible — template always has a song (default or custom)
   }
 })();
+
+
+/* ═══════════════════════════════════
+   RSVP form submission
+═══════════════════════════════════ */
+function initRSVPForm(endpoint) {
+  var form = document.getElementById('rsvpForm');
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  var status = document.getElementById('rsvpStatus');
+  var btn = form.querySelector('button[type="submit"]');
+  var label = btn.querySelector('.rsvp-btn-inner');
+  var guests = document.getElementById('rsvpGuestsField');
+  var YES_NOTE = status.textContent;
+  var NO_NOTE = 'We’ll truly miss you.';
+
+  function setStatus(msg, state) {
+    status.textContent = msg;
+    status.dataset.state = state || '';
+  }
+
+  form.addEventListener('change', function (e) {
+    if (e.target.name !== 'attending') return;
+    var yes = e.target.value === 'Yes';
+    guests.hidden = !yes;
+    setStatus(yes ? YES_NOTE : NO_NOTE);
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = form.elements.name;
+    if (!name.value.trim()) {
+      name.setAttribute('aria-invalid', 'true');
+      name.focus();
+      setStatus('Please tell us your name so we know who is coming.', 'error');
+      return;
+    }
+    name.removeAttribute('aria-invalid');
+    if (!endpoint) {
+      setStatus("RSVPs aren't open just yet. Please try again in a little while.", 'error');
+      return;
+    }
+
+    var data = new URLSearchParams(new FormData(form));
+    if (data.get('attending') !== 'Yes') data.set('guests', '0');
+    btn.disabled = true;
+    label.textContent = 'SENDING…';
+    setStatus('Sending your RSVP…');
+
+    fetch(endpoint, { method: 'POST', body: data })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (!json || !json.ok) throw new Error((json && json.error) || 'rejected');
+        var yes = data.get('attending') === 'Yes';
+        form.reset();
+        guests.hidden = false;
+        label.textContent = 'RSVP RECEIVED';
+        setStatus(yes
+          ? 'Thank you! Your seat is saved. We can’t wait to celebrate with you.'
+          : 'We’re heartbroken you can’t make it, but thank you for letting us know.', 'success');
+        setTimeout(function () { btn.disabled = false; label.textContent = 'SEND MY RSVP'; }, 4000);
+      })
+      .catch(function () {
+        btn.disabled = false;
+        label.textContent = 'SEND MY RSVP';
+        setStatus("We couldn't send your RSVP. Check your connection and tap Send again.", 'error');
+      });
+  });
+}
