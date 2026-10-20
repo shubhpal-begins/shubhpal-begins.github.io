@@ -3949,10 +3949,12 @@
       padding: 10px 14px;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      resize: vertical;
       color-scheme: dark; /* light calendar icon on the dark field */
       transition: border-color .3s;
     }
+    /* Date fields: drop the native (iOS Safari) styling so the box matches the text inputs */
+    .rsvp-input[type="date"] { -webkit-appearance: none; appearance: none; height: 45px; min-height: 0; line-height: 1.2; }
+    .rsvp-input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
     .rsvp-input:focus { outline: none; border-color: var(--amber); box-shadow: 0 0 0 2px rgba(216,169,87,.35); }
     .rsvp-input[aria-invalid="true"] { border-color: #e7a3a3; }
     .rsvp-choice { flex-direction: row; flex-wrap: wrap; gap: 10px; padding: 0; }
