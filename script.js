@@ -2378,6 +2378,7 @@ function initRSVPForm(endpoint) {
   var btn = form.querySelector('button[type="submit"]');
   var label = btn.querySelector('.rsvp-btn-inner');
   var guests = document.getElementById('rsvpGuestsField');
+  var arrival = document.getElementById('rsvpArrivalField');
   var YES_NOTE = status.textContent;
   var NO_NOTE = 'We’ll truly miss you.';
 
@@ -2389,7 +2390,7 @@ function initRSVPForm(endpoint) {
   form.addEventListener('change', function (e) {
     if (e.target.name !== 'attending') return;
     var yes = e.target.value === 'Yes';
-    guests.hidden = !yes;
+    guests.hidden = arrival.hidden = !yes;
     setStatus(yes ? YES_NOTE : NO_NOTE);
   });
 
@@ -2409,7 +2410,7 @@ function initRSVPForm(endpoint) {
     }
 
     var data = new URLSearchParams(new FormData(form));
-    if (data.get('attending') !== 'Yes') data.set('guests', '0');
+    if (data.get('attending') !== 'Yes') { data.set('guests', '0'); data.set('arrival', ''); }
     btn.disabled = true;
     label.textContent = 'SENDING…';
     setStatus('Sending your RSVP…');
@@ -2420,7 +2421,7 @@ function initRSVPForm(endpoint) {
         if (!json || !json.ok) throw new Error((json && json.error) || 'rejected');
         var yes = data.get('attending') === 'Yes';
         form.reset();
-        guests.hidden = false;
+        guests.hidden = arrival.hidden = false;
         label.textContent = 'RSVP RECEIVED';
         setStatus(yes
           ? 'Thank you! Your seat is saved. We can’t wait to celebrate with you.'

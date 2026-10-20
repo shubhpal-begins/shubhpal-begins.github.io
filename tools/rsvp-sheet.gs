@@ -7,7 +7,7 @@
  *  3. Copy the /exec URL into index.html → wedding-config → "rsvp":{"endpoint":"<url>"}.
  * Re-deploy (Manage deployments → edit → new version) after changing this script.
  */
-var HEADERS = ['Submitted at', 'Name', 'Phone', 'Attending', 'Guests'];
+var HEADERS = ['Submitted at', 'Name', 'Phone', 'Attending', 'Guests', 'Arriving'];
 
 function doPost(e) {
   var p = (e && e.parameter) || {};
@@ -17,13 +17,14 @@ function doPost(e) {
   if (!name) return json_({ ok: false, error: 'name_required' });
   var attending = p.attending === 'No' ? 'No' : 'Yes';
   var guests = attending === 'Yes' ? Math.min(Math.max(parseInt(p.guests, 10) || 1, 1), 10) : 0;
+  var arrival = attending === 'Yes' && /^\d{4}-\d{2}-\d{2}$/.test(p.arrival || '') ? p.arrival : '';
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-    if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
-    sheet.appendRow([new Date(), name, clean_(p.phone, 20), attending, guests]);
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]); // also adds new columns to an existing sheet
+    sheet.appendRow([new Date(), name, clean_(p.phone, 20), attending, guests, arrival]);
   } finally {
     lock.releaseLock();
   }
